@@ -3,14 +3,14 @@ const router = express.Router();
 const postsController = require('../controllers/posts');
 const { authenticateToken } = require('../middleware/auth');
 
-// Routes publiques
-router.get('/', postsController.getPosts);
-router.get('/:id', postsController.getPost);
+// Public routes
+router.get('/', postsController.getFeed);
 
-// Routes protégées
+// Protected routes
 router.post('/', authenticateToken, postsController.createPost);
-router.post('/draft', authenticateToken, postsController.saveDraft);
-router.get('/draft', authenticateToken, postsController.getDraft);
-router.delete('/:id', authenticateToken, postsController.deletePost);
+router.get('/user/posts', authenticateToken, postsController.getUserPosts);
+
+// Route avec paramètre - toujours à la fin pour éviter de capturer d'autres routes
+router.get('/:id', postsController.getPost);
 
 module.exports = router; 

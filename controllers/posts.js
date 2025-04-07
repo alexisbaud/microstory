@@ -48,24 +48,38 @@ async function getPost(req, res) {
  */
 async function createPost(req, res) {
   try {
-    const userId = req.user.id;
-    const postData = {
-      ...req.body,
-      authorId: userId
-    };
-
-    // Validation des données
-    const validation = validatePost(postData);
-    if (!validation.isValid) {
-      return res.status(400).json({ errors: validation.errors });
+    const { content, visibility, title, hashtags, type, ttsInstructions } = req.body;
+    const authorId = req.user.id;
+    
+    // Validate required fields
+    if (!content || !type) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        details: 'Content and type are required' 
+      });
     }
-
-    // Création du post
+    
+    // Create post object
+    const postData = {
+      authorId,
+      content,
+      type,
+      title,
+      hashtags,
+      ttsInstructions,
+      visibility: visibility || 'public',
+      ttsGenerated: false,
+      isDraft: false
+    };
+    
+    // Create post in database
     const newPost = Post.createPost(postData);
+    
+    // Return created post
     res.status(201).json(newPost);
   } catch (error) {
-    console.error('Erreur lors de la création du post:', error);
-    res.status(500).json({ error: 'Erreur lors de la création du post' });
+    console.error('Error creating post:', error);
+    res.status(500).json({ error: 'Failed to create post' });
   }
 }
 
@@ -144,11 +158,38 @@ async function deletePost(req, res) {
 async function getUserPosts(req, res) {
   try {
     const userId = req.user.id;
-    const posts = Post.getUserPosts(userId);
+    const posts = Post.getPostsByUser(userId);
     res.json(posts);
   } catch (error) {
-    console.error('Erreur lors de la récupération des posts utilisateur:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des posts utilisateur' });
+    console.error('Error fetching user posts:', error);
+    res.status(500).json({ error: 'Failed to fetch user posts' });
+  }
+}
+
+/**
+ * Get feed - paginated public posts
+ * @param {object} req - Express request
+ * @param {object} res - Express response
+ */
+async function getFeed(req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Get posts using the getAllPosts method
+    const posts = Post.getAllPosts({ page, limit });
+    
+    res.json({
+      posts,
+      pagination: {
+        page,
+        limit,
+        hasMore: posts.length === limit // Simple way to check if there might be more posts
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching feed:', error);
+    res.status(500).json({ error: 'Failed to fetch feed' });
   }
 }
 
@@ -159,5 +200,6 @@ module.exports = {
   saveDraft,
   getDraft,
   deletePost,
-  getUserPosts
+  getUserPosts,
+  getFeed
 }; 

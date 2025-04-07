@@ -30,7 +30,11 @@ try {
 }
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Routes
@@ -67,6 +71,6 @@ app.use((err, req, res, next) => {
 });
 
 // Démarrage du serveur
-app.listen(port, () => {
-  console.log(`Serveur démarré sur le port ${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Serveur prêt sur 0.0.0.0:${port}`);
 });
